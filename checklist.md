@@ -57,7 +57,7 @@ Good: `books.title`
 * Let's save each query in a separate variable.
     - Bad practice:
         ```java
-            public List<Book> findAll() {
+            import mate.academy.model.Book;public List<Book> findAll() {
                 try (Connection connection = ConnectionUtil.getConnection()
                     PreparedStatement preparedStatement = connection
                         .prepareStatement("SELECT * FROM books")) { // it's bad
@@ -67,9 +67,9 @@ Good: `books.title`
                 }
             }
         ``` 
-    - Good practice: 
+    - Good practice:
         ```java
-            public List<Book> findAll() {
+            import mate.academy.model.Book;public List<Book> findAll() {
                 String query = "SELECT * FROM books"; // it's good
                 try (Connection connection = ConnectionUtil.getConnection();
                     PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -111,7 +111,7 @@ Good: `books.title`
         ```sql
         SELECT * FROM books WHERE id = 1;
         ```         
-* When you convert `ResultSet` to `Book` better create an object using setters or constructor but not both of them, because it's not consistent to use both ways of initialization of object.
+* When you convert `ResultSet` to `mate.academy.model.Book` better create an object using setters or constructor but not both of them, because it's not consistent to use both ways of initialization of object.
 
   ```java
        Long id = rs.getObject(1, Long.class);
@@ -120,12 +120,12 @@ Good: `books.title`
        
     - Bad practice:
         ```java
-        Book book = new Book(title);
+        import mate.academy.model.Book;Book book = new Book(title);
         book.setId(id); 
         ``` 
-    - Good practice: 
+    - Good practice:
         ```java
-        Book book = new Book(id, title);
+        import mate.academy.model.Book;Book book = new Book(id, title);
         
         // or
         
