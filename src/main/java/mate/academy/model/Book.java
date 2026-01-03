@@ -8,9 +8,6 @@ public class Book {
     private BigDecimal price;
 
     public Book() {
-        this.id = id;
-        this.title = title;
-        this.price = price;
     }
 
     public Long getId() {

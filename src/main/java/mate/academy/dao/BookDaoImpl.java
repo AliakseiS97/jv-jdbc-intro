@@ -30,9 +30,13 @@ public class BookDaoImpl implements BookDao {
             stmt.setBigDecimal(2, book.getPrice());
 
             stmt.executeUpdate();
-            ResultSet rs = stmt.getGeneratedKeys();
-            if (rs.next()) {
-                book.setId(rs.getLong(1));
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    Object idObj = rs.getObject(1); // Получаем как Object
+                    if (idObj != null && idObj instanceof Number) {
+                        book.setId(((Number) idObj).longValue()); // Преобразуем безопасно в Long
+                    }
+                }
             }
             return book;
         } catch (SQLException e) {
@@ -43,18 +47,16 @@ public class BookDaoImpl implements BookDao {
 
     @Override
     public Optional<Book> findById(Long id) {
-        String sql = "SELECT * FROM books WHERE id = ?";
-        try (Connection con = DriverManager.getConnection(URL,USER,PASSWORD);
+        String sql = "SELECT id, title, price FROM books WHERE id = ?";
+        try (Connection con = DriverManager.getConnection(URL, USER, PASSWORD);
                 PreparedStatement stmt = con.prepareStatement(sql)) {
-            stmt.setLong(1,id);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                Book book = new Book();
-                book.setId(rs.getLong("id"));
-                book.setTitle(rs.getString("title"));
-                book.setPrice(rs.getBigDecimal("price"));
-                return Optional.of(book);
+            stmt.setLong(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapResultSetToBook(rs));
+                }
             }
+
             return Optional.empty();
         } catch (SQLException e) {
             throw new DataProcessingException(
@@ -64,22 +66,22 @@ public class BookDaoImpl implements BookDao {
 
     @Override
     public List<Book> findAll() {
-        String sql = "SELECT * FROM books";
+        String sql = "SELECT id, title, price FROM books";
         List<Book> books = new ArrayList<>();
-        try (Connection con = DriverManager.getConnection(URL,USER,PASSWORD);
+
+        try (Connection con = DriverManager.getConnection(URL, USER, PASSWORD);
                 PreparedStatement stmt = con.prepareStatement(sql);
                 ResultSet rs = stmt.executeQuery()) {
+
             while (rs.next()) {
-                Book book = new Book();
-                book.setId(rs.getLong("id"));
-                book.setTitle(rs.getString("title"));
-                book.setPrice(rs.getBigDecimal("price"));
-                books.add(book);
+                books.add(mapResultSetToBook(rs));
             }
+
+            return books;
         } catch (SQLException e) {
-            throw new DataProcessingException("Can't get all books from database", e);
+            throw new DataProcessingException(
+                    "Can't get all books from database", e);
         }
-        return books;
     }
 
     @Override
@@ -115,4 +117,19 @@ public class BookDaoImpl implements BookDao {
                     "Can't delete book from database: " + id, e);
         }
     }
+
+    private Book mapResultSetToBook(ResultSet rs) throws SQLException {
+        Book book = new Book();
+
+        Object idObj = rs.getObject("id");
+        if (idObj != null && idObj instanceof Number) {
+            book.setId(((Number) idObj).longValue());
+        }
+
+        book.setTitle(rs.getString("title"));
+        book.setPrice(rs.getBigDecimal("price"));
+
+        return book;
+    }
+
 }
